@@ -10,14 +10,6 @@ ollama==0.6.1
 numpy==2.4.2
 fastapi==0.115.14
 jupyter==1.1.1
-git+ssh://git@gitlab.datascience.ch/industry/common/conversational-toolkit.git@v7.0.4
+# git+ssh://git@gitlab.datascience.ch/industry/common/conversational-toolkit.git@v7.0.4
 
-# asyncpg
-# greenlet
-# loguru
-# pandas
-# partial-json-parser
-# python-dotenv
-# uvicorn
-# python-docx
 
