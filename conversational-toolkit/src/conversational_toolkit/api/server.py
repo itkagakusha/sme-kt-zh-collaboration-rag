@@ -1,5 +1,5 @@
 import os
-from typing import Union
+from typing import Optional, Union
 
 from fastapi import FastAPI, __version__
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,7 +21,7 @@ logger.add(Paths.LOGS_FOLDER + "/api.log", rotation="50 MB")
 
 def create_app(
     controller: ConversationalToolkitController,
-    auth_provider: AuthProvider = None,
+    auth_provider: Optional[AuthProvider] = None,
     allow_origins=None,
     dist_path: str = Paths.DIST_FOLDER,
     env: str = os.getenv("ENV", "local"),

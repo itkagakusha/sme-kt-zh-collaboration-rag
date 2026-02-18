@@ -24,7 +24,7 @@ class ReactionTable(Base):
             id=str(self.id),
             message_id=str(self.message_id),
             content=str(self.content),
-            note=str(self.note) if self.note else None,
+            note=str(self.note) if self.note is not None else None,
             user_id=str(self.user_id),
         )
 

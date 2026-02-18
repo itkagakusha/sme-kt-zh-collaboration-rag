@@ -1,4 +1,4 @@
-from typing import Union, Any
+from typing import Any
 
 import numpy as np
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
@@ -10,7 +10,7 @@ from conversational_toolkit.vectorstores.base import VectorStore, ChunkMatch
 from sqlalchemy import text, and_
 from sqlalchemy import MetaData
 from sqlalchemy import Table, Column, String, JSON
-from pgvector.sqlalchemy import Vector
+from pgvector.sqlalchemy import Vector  # type: ignore[import-untyped]
 from numpy.typing import NDArray
 
 from sqlalchemy import insert, select
@@ -67,23 +67,23 @@ class PGVectorStore(VectorStore):
         async with self.engine.begin() as session:
             await session.run_sync(self.metadata.create_all)
 
-    async def insert_chunks(self, chunks: list[Chunk], embeddings: NDArray[np.float64]) -> None:
+    async def insert_chunks(self, chunks: list[Chunk], embedding: NDArray[np.float64]) -> None:
         """
         Inserts a document and its embedding into the table.
 
         :param chunks: List of document chunks, each containing a title, content, and metadata
-        :param embeddings: Array of embedding vectors corresponding to the document chunks
+        :param embedding: Array of embedding vectors corresponding to the document chunks
         """
         data_to_insert = [
             {
                 "id": generate_uid(),
                 "title": chunk.title,
                 "content": chunk.content,
-                "embedding": embedding,
+                "embedding": emb,
                 "mime_type": chunk.mime_type,
                 "chunk_metadata": chunk.metadata,
             }
-            for chunk, embedding in zip(chunks, embeddings)
+            for chunk, emb in zip(chunks, embedding)
         ]
 
         async with self.SessionLocal() as session:
@@ -129,7 +129,7 @@ class PGVectorStore(VectorStore):
             ]
         return results
 
-    async def get_chunks_by_ids(self, chunk_ids: Union[int, list[int]]) -> list[Chunk]:
+    async def get_chunks_by_ids(self, chunk_ids: int | list[int]) -> list[Chunk]:
         """
         Search for document chunks based on a single chunk ID or a list of chunk IDs.
 

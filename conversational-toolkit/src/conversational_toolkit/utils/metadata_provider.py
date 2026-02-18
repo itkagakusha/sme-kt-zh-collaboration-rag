@@ -1,8 +1,9 @@
+from collections.abc import Generator
 from contextvars import ContextVar
 from contextlib import contextmanager
-from typing import Optional, Any, Generator
+from typing import Any
 
-metadata_context: ContextVar[Optional[list[dict[str, Any]]]] = ContextVar("metadata", default=None)
+metadata_context: ContextVar[list[dict[str, Any]] | None] = ContextVar("metadata", default=None)
 
 
 class MetadataProvider:

@@ -1,5 +1,6 @@
 import json
-from typing import Any, AsyncGenerator, Optional, Sequence
+from collections.abc import AsyncGenerator, Sequence
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -17,9 +18,9 @@ from conversational_toolkit.utils.time import get_current_timestamp
 
 class MessageInput(BaseModel):
     content: str
-    parent_id: Optional[str] = None
-    conversation_id: Optional[str] = None
-    type: Optional[str] = None
+    parent_id: str | None = None
+    conversation_id: str | None = None
+    type: str | None = None
 
 
 class ConversationInput(BaseModel):
@@ -28,13 +29,13 @@ class ConversationInput(BaseModel):
 
 class ReactionInput(BaseModel):
     content: str = ""
-    note: Optional[str] = None
+    note: str | None = None
 
 
 class ClientMessage(Message):
     sources: Sequence[Source]
-    reaction: Optional[str]
-    follow_up_questions: Optional[Sequence[str]]
+    reaction: str | None
+    follow_up_questions: Sequence[str] | None
 
     def encode(self, charset: str = "utf-8") -> bytes:
         return json.dumps(self.model_dump()).encode(charset)
@@ -78,6 +79,35 @@ class ConversationalToolkitController:
             raise Exception("No message was generated from the stream")
         return last_message
 
+    async def _setup_conversation(self, user_input: MessageInput, user_id: str) -> tuple[Conversation, list[Message]]:
+        if user_input.conversation_id is None:
+            create_time = get_current_timestamp()
+            conversation = await self.conversation_db.create_conversation(
+                Conversation(
+                    id=generate_uid(),
+                    user_id=user_id,
+                    create_timestamp=create_time,
+                    update_timestamp=create_time,
+                    title=DEFAULT_CONVERSATION_TITLE,
+                )
+            )
+            return conversation, []
+
+        conversation = await self.conversation_db.get_conversation_by_id(user_input.conversation_id)
+        conversation_history = await self.message_db.get_messages_by_conversation_id(conversation.id)
+        parent_message = await self.message_db.get_message_by_id(user_input.parent_id) if user_input.parent_id else None
+        if not parent_message:
+            return conversation, []
+
+        current_message = parent_message
+        thread: list[Message] = [current_message]
+        while current_message.parent_id:
+            current_message = next(
+                message for message in conversation_history if message.id == current_message.parent_id
+            )
+            thread.append(current_message)
+        return conversation, thread
+
     async def process_new_message_stream(
         self, user_input: MessageInput, user_id: str
     ) -> AsyncGenerator[ClientMessage, Any]:
@@ -87,34 +117,7 @@ class ConversationalToolkitController:
             if not user:
                 await self.user_db.create_user(User(id=user_id))
 
-            if user_input.conversation_id is None:
-                create_time = get_current_timestamp()
-                conversation = await self.conversation_db.create_conversation(
-                    Conversation(
-                        id=generate_uid(),
-                        user_id=user_id,
-                        create_timestamp=create_time,
-                        update_timestamp=create_time,
-                        title=DEFAULT_CONVERSATION_TITLE,
-                    )
-                )
-                thread: list[Message] = []
-            else:
-                conversation = await self.conversation_db.get_conversation_by_id(user_input.conversation_id)
-                conversation_history = await self.message_db.get_messages_by_conversation_id(conversation.id)
-                parent_message = (
-                    await self.message_db.get_message_by_id(user_input.parent_id) if user_input.parent_id else None
-                )
-                if not parent_message:
-                    thread = []
-                else:
-                    current_message = parent_message
-                    thread = [current_message]
-                    while current_message.parent_id:
-                        current_message = next(
-                            message for message in conversation_history if message.id == current_message.parent_id
-                        )
-                        thread.append(current_message)
+            conversation, thread = await self._setup_conversation(user_input, user_id)
 
             if user_input.type == "redo":
                 if user_input.parent_id is None:
@@ -144,7 +147,9 @@ class ConversationalToolkitController:
                 )
             )
 
+            last_chunk = None
             async for chunk in stream:
+                last_chunk = chunk
                 if chunk.content:
                     yield ClientMessage(
                         id="",
@@ -159,12 +164,15 @@ class ConversationalToolkitController:
                         create_timestamp=get_current_timestamp(),
                     )
 
+            if last_chunk is None:
+                return
+
             final_message = await self.message_db.create_message(
                 Message(
                     id=generate_uid(),
                     user_id=None,
                     conversation_id=conversation.id,
-                    content=chunk.content,
+                    content=last_chunk.content,
                     role=Roles.ASSISTANT,
                     create_timestamp=get_current_timestamp(),
                     metadata=MetadataProvider.get_metadata(),
@@ -178,7 +186,7 @@ class ConversationalToolkitController:
                         id=generate_uid(), message_id=final_message.id, content=source.content, metadata=source.metadata
                     )
                 )
-                for source in chunk.sources
+                for source in last_chunk.sources
             ]
 
             if user_input.conversation_id is None:
@@ -188,7 +196,7 @@ class ConversationalToolkitController:
                         user_id=user_id,
                         create_timestamp=conversation.create_timestamp,
                         update_timestamp=get_current_timestamp(),
-                        title=chunk.content[:40],
+                        title=last_chunk.content[:40],
                     )
                 )
 
@@ -200,7 +208,7 @@ class ConversationalToolkitController:
                 role=final_message.role,
                 sources=sources,
                 reaction=None,
-                follow_up_questions=chunk.follow_up_questions,
+                follow_up_questions=last_chunk.follow_up_questions,
                 parent_id=input_message.id,
                 create_timestamp=final_message.create_timestamp,
             )

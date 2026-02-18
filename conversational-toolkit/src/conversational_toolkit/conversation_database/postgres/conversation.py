@@ -1,5 +1,3 @@
-from typing import Optional
-
 from sqlalchemy import Column, String, BigInteger, select, ForeignKey
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import relationship
@@ -29,8 +27,8 @@ class ConversationTable(Base):
         return Conversation(
             id=str(self.id),
             user_id=str(self.user_id),
-            create_timestamp=int(self.create_timestamp),
-            update_timestamp=int(self.update_timestamp),
+            create_timestamp=int(self.create_timestamp),  # type: ignore[arg-type]
+            update_timestamp=int(self.update_timestamp),  # type: ignore[arg-type]
             title=str(self.title),
         )
 
@@ -81,7 +79,7 @@ class PostgreSQLConversationDatabase(ConversationDatabase):
     async def get_conversation_by_id(self, conversation_id: str) -> Conversation:
         async with self.make_session() as session:
             try:
-                conversation: Optional[ConversationTable] = await session.get(ConversationTable, conversation_id)
+                conversation: ConversationTable | None = await session.get(ConversationTable, conversation_id)
                 if conversation is None:
                     raise ValueError(f"Conversation with id {conversation_id} not found")
                 return conversation.to_model()
@@ -97,7 +95,7 @@ class PostgreSQLConversationDatabase(ConversationDatabase):
         async with self.make_session() as session:
             async with session.begin():
                 try:
-                    db_conversation: Optional[ConversationTable] = await session.get(ConversationTable, id)
+                    db_conversation: ConversationTable | None = await session.get(ConversationTable, conversation.id)
                     if db_conversation:
                         setattr(db_conversation, "user_id", conversation.user_id)
                         setattr(db_conversation, "create_timestamp", conversation.create_timestamp)
@@ -105,9 +103,9 @@ class PostgreSQLConversationDatabase(ConversationDatabase):
                         setattr(db_conversation, "title", conversation.title)
                         await session.commit()
                         return db_conversation.to_model()
-                    raise ValueError(f"Conversation with id {id} not found")
+                    raise ValueError(f"Conversation with id {conversation.id} not found")
                 except Exception as e:
-                    logger.error(f"Error updating conversation {id}: {e}")
+                    logger.error(f"Error updating conversation {conversation.id}: {e}")
                     await session.rollback()
                     raise
 

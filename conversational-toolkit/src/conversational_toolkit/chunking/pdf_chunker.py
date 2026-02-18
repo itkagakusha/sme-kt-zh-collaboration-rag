@@ -1,27 +1,37 @@
 import re
 from enum import StrEnum
 
-import pymupdf4llm
+import pymupdf4llm  # type: ignore[import-untyped]
+from markitdown import MarkItDown  # type: ignore[import-untyped]
 
 from conversational_toolkit.chunking.base import Chunk, Chunker
 
 
-# TODO: Add other PDF to Markdown engines
-# TODO: Handles images in PDFs
-
-
 class MarkdownConverterEngine(StrEnum):
     PYMUPDF4LLM = "pymupdf4llm"
+    MARKITDOWN = "markitdown"
 
 
 class PDFChunker(Chunker):
     def _pdf2markdown(
-        self, file_path: str, engine: MarkdownConverterEngine = MarkdownConverterEngine.PYMUPDF4LLM
+        self,
+        file_path: str,
+        engine: MarkdownConverterEngine = MarkdownConverterEngine.PYMUPDF4LLM,
+        write_images: bool = False,
+        image_path: str | None = None,
     ) -> str:
         if engine == MarkdownConverterEngine.PYMUPDF4LLM:
-            return pymupdf4llm.to_markdown(file_path)  # type: ignore
+            kwargs: dict = {}
+            if write_images:
+                kwargs["write_images"] = True
+                if image_path:
+                    kwargs["image_path"] = image_path
+            return pymupdf4llm.to_markdown(file_path, **kwargs)  # type: ignore[no-any-return]
+        elif engine == MarkdownConverterEngine.MARKITDOWN:
+            result = MarkItDown().convert(file_path)
+            return result.text_content
         else:
-            raise NotImplementedError("Specified engine is not supported.")
+            raise NotImplementedError(f"Engine '{engine}' is not supported.")
 
     def _normalize_newlines(self, text: str) -> str:
         paragraphs = text.split("\n\n")
@@ -29,9 +39,13 @@ class PDFChunker(Chunker):
         return "\n\n".join(processed_paragraphs)
 
     def make_chunks(
-        self, file_path: str, engine: MarkdownConverterEngine = MarkdownConverterEngine.PYMUPDF4LLM
+        self,
+        file_path: str,
+        engine: MarkdownConverterEngine = MarkdownConverterEngine.PYMUPDF4LLM,
+        write_images: bool = False,
+        image_path: str | None = None,
     ) -> list[Chunk]:
-        markdown = self._pdf2markdown(file_path, engine)
+        markdown = self._pdf2markdown(file_path, engine, write_images=write_images, image_path=image_path)
 
         header_pattern = re.compile(r"^(#{1,6}\s.*)$", re.MULTILINE)
         matches = list(header_pattern.finditer(markdown))
@@ -51,7 +65,7 @@ class PDFChunker(Chunker):
             if len(current_chapters) < header_level:
                 current_chapters.append(header_line)
             else:
-                current_chapters = current_chapters[: header_level - 1] + [header_line]
+                current_chapters = [*current_chapters[: header_level - 1], header_line]
 
             start_idx = match.start()
             if i < len(matches) - 1:

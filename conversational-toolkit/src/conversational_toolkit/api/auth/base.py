@@ -4,7 +4,7 @@ from fastapi import Request, FastAPI
 
 class AuthProvider(ABC):
     @abstractmethod
-    def get_current_user_id(self, request: Request):
+    def get_current_user_id(self, request: Request) -> str:
         """Dependency to retrieve the current user"""
         pass
 

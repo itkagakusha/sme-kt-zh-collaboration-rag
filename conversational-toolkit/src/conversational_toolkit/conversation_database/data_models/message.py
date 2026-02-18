@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Any
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -8,13 +8,13 @@ from conversational_toolkit.llms.base import Roles
 
 class Message(BaseModel):
     id: str
-    user_id: Optional[str]
+    user_id: str | None
     conversation_id: str
     content: str
     role: Roles
     create_timestamp: int
-    parent_id: Optional[str] = None
-    metadata: Optional[list[dict[str, Any]]] = None
+    parent_id: str | None = None
+    metadata: list[dict[str, Any]] | None = None
 
 
 class MessageDatabase(ABC):
@@ -30,7 +30,7 @@ class MessageDatabase(ABC):
         pass
 
     @abstractmethod
-    async def get_message_by_id(self, conversation_id: str) -> Message:
+    async def get_message_by_id(self, message_id: str) -> Message:
         pass
 
     @abstractmethod

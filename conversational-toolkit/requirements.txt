@@ -2,6 +2,7 @@
 fastapi==0.115.11
 httpx==0.28.1
 loguru==0.6.0
+markitdown==0.1.4
 numpy==2.2.3
 ollama==0.4.7
 openai==1.68.2

@@ -56,7 +56,7 @@ class InMemoryConversationDatabase(ConversationDatabase):
         conversation: Conversation,
     ) -> Conversation:
         if self.conversations.get(conversation.id) is None:
-            raise ValueError(f"Conversation with id {id} not found")
+            raise ValueError(f"Conversation with id {conversation.id} not found")
         self.conversations[conversation.id] = conversation
         self._save()
         logger.debug(f"Updated conversation: {conversation}")

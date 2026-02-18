@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -15,7 +14,7 @@ class EmbeddingsModel(ABC):
     """
 
     @abstractmethod
-    async def get_embeddings(self, texts: Union[str, list[str]]) -> NDArray[np.float64]:
+    async def get_embeddings(self, texts: str | list[str]) -> NDArray[np.float64]:
         """
         Retrieves the embedding for the given text.
 

@@ -47,7 +47,7 @@ async def create_chromadb(
     embeddings = await embedding_model.get_embeddings([c.content for c in chunks])
     await vector_store.insert_chunks(
         chunks=chunks,
-        embeddings=embeddings,
+        embedding=embeddings,
     )
     return vector_store
 

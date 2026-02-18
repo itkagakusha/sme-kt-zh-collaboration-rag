@@ -1,7 +1,7 @@
 from abc import ABC
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
-from jose import JWTError, jwt
+from jose import JWTError, jwt  # type: ignore[import-untyped]
 
 from conversational_toolkit.api.auth.base import AuthProvider
 from conversational_toolkit.conversation_database.controller import ConversationalToolkitController
@@ -31,7 +31,6 @@ class SessionCookieProvider(AuthProvider, ABC):
             response: Response,
         ) -> None:
             access_token = request.cookies.get(self.cookie_name)
-            print(access_token)
 
             if not access_token:
                 user = await self.controller.register_user(user_id=generate_uid())
@@ -52,6 +51,9 @@ class SessionCookieProvider(AuthProvider, ABC):
 
         try:
             claims = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
-            return claims.get("sub")
+            sub = claims.get("sub")
+            if sub is None:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token missing subject claim")
+            return str(sub)
         except JWTError as e:
             raise HTTPException(status_code=401, detail=f"Invalid token: {e}")

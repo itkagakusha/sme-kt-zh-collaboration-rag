@@ -1,10 +1,9 @@
-from typing import Union
 from loguru import logger
 import numpy as np
 from numpy.typing import NDArray
 
 from conversational_toolkit.embeddings.base import EmbeddingsModel
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 
 class OpenAIEmbeddings(EmbeddingsModel):
@@ -16,11 +15,11 @@ class OpenAIEmbeddings(EmbeddingsModel):
     """
 
     def __init__(self, model_name: str):
-        self.client = OpenAI()
+        self.client = AsyncOpenAI()
         self.model_name = model_name
         logger.debug(f"OpenAI embeddings model loaded: {model_name}")
 
-    def get_embeddings(self, texts: Union[str, list[str]]) -> NDArray[np.float64]:  # type: ignore
+    async def get_embeddings(self, texts: str | list[str]) -> NDArray[np.float64]:
         """
         Retrieves the embedding for the given text(s) using OpenAI.
 
@@ -33,7 +32,7 @@ class OpenAIEmbeddings(EmbeddingsModel):
         if isinstance(texts, str):
             texts = [texts]
 
-        response = self.client.embeddings.create(input=texts, model=self.model_name, dimensions=1024)
+        response = await self.client.embeddings.create(input=texts, model=self.model_name, dimensions=1024)
         embeddings = np.asarray([response.data[i].embedding for i in range(len(response.data))])
 
         logger.info(f"OpenAI embeddings shape: {embeddings.shape}")

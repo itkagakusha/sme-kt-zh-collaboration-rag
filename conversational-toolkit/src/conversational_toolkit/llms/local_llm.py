@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from typing import AsyncGenerator
 
 from loguru import logger
@@ -49,6 +48,6 @@ class LocalLLM(LLM):
             tool_calls=completion.choices[0].message.tool_calls,  # type: ignore
         )
 
-    @abstractmethod
-    def generate_stream(self, conversation: list[LLMMessage]) -> AsyncGenerator[LLMMessage, None]:
-        pass
+    async def generate_stream(self, conversation: list[LLMMessage]) -> AsyncGenerator[LLMMessage, None]:
+        msg = await self.generate(conversation)
+        yield msg

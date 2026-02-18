@@ -41,7 +41,7 @@ async def create_chromadb(
     embeddings = await embedding_model.get_embeddings([c.content for c in chunks])
     await vector_store.insert_chunks(
         chunks=chunks,
-        embeddings=embeddings,
+        embedding=embeddings,
     )
     return vector_store
 
@@ -102,7 +102,7 @@ async def create_rag(
         seed=seed,
         tools=None,
         tool_choice=None,
-        response_format="",
+        response_format=None,
         host=None,  # use ollama's default http://localhost:11434
     )
 

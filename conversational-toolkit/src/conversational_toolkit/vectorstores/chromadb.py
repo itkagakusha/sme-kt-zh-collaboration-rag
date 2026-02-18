@@ -1,5 +1,5 @@
 import chromadb
-from typing import Union, Any, Optional
+from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
@@ -19,18 +19,18 @@ class ChromaDBVectorStore(VectorStore):
         self.client = chromadb.PersistentClient(path=db_path)
         self.collection = self.client.get_or_create_collection(name=collection_name)
 
-    async def insert_chunks(self, chunks: list[Chunk], embeddings: NDArray[np.float64]) -> None:
+    async def insert_chunks(self, chunks: list[Chunk], embedding: NDArray[np.float64]) -> None:
         """
         Insert chunks into ChromaDB.
 
         :param chunks: List of document chunks
-        :param embeddings: Corresponding embedding vectors
+        :param embedding: Corresponding embedding vectors
         """
         documents = []
         metadatas = []
         ids = []
 
-        for chunk, embedding in zip(chunks, embeddings):
+        for chunk, _ in zip(chunks, embedding):
             doc_id = str(generate_uid())
             documents.append(chunk.content)
             metadatas.append({"title": chunk.title, "mime_type": chunk.mime_type, **chunk.metadata})
@@ -38,13 +38,13 @@ class ChromaDBVectorStore(VectorStore):
 
         self.collection.add(
             ids=ids,
-            embeddings=embeddings.tolist(),  # type: ignore
+            embeddings=embedding.tolist(),  # type: ignore
             metadatas=metadatas,  # type: ignore
             documents=documents,
         )
 
     async def get_chunks_by_embedding(
-        self, embedding: NDArray[np.float64], top_k: int, filters: Optional[dict[str, Any]] = None
+        self, embedding: NDArray[np.float64], top_k: int, filters: dict[str, Any] | None = None
     ) -> list[ChunkMatch]:
         """
         Retrieve chunks most similar to the given embedding.
@@ -73,7 +73,7 @@ class ChromaDBVectorStore(VectorStore):
 
         return chunk_matches
 
-    async def get_chunks_by_ids(self, chunk_ids: Union[int, list[int]]) -> list[Chunk]:
+    async def get_chunks_by_ids(self, chunk_ids: int | list[int]) -> list[Chunk]:
         """
         Retrieve chunks by their IDs.
 

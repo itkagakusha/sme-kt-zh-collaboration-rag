@@ -32,12 +32,12 @@ class MessageTable(Base):
     def to_model(self) -> Message:
         return Message(
             id=str(self.id),
-            user_id=str(self.user_id) if self.user_id else None,
+            user_id=str(self.user_id) if self.user_id is not None else None,
             conversation_id=str(self.conversation_id),
             content=str(self.content),
             role=Roles(str(self.role)),
-            create_timestamp=int(self.create_timestamp),
-            parent_id=str(self.parent_id) if self.parent_id else None,
+            create_timestamp=int(self.create_timestamp),  # type: ignore[arg-type]
+            parent_id=str(self.parent_id) if self.parent_id is not None else None,
             metadata=cast(list[dict[str, Any]], self.metadata_),
         )
 

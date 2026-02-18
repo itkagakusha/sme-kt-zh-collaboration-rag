@@ -17,6 +17,12 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+pdf = ["pymupdf4llm>=0.0.17"]
+pdf-markitdown = ["markitdown>=0.0.1"]
+excel = ["openpyxl>=3.1.0"]
+all = ["pymupdf4llm>=0.0.17", "markitdown>=0.0.1", "openpyxl>=3.1.0"]
+
 [tool.setuptools.dynamic]
 version = {attr = "conversational_toolkit.__version__"}
 
@@ -40,8 +46,9 @@ extend-select = [
     "RUF",    # Ruff-specific rules
 ]
 ignore = [
-    "NPY002", # numpy-legacy-random
-    "PGH003", # type ignore for mypy
+    "NPY002",   # numpy-legacy-random
+    "PGH003",   # type ignore for mypy
+    "PLR0913",  # too many arguments (common in class __init__ signatures)
 ]
 
 [tool.ruff.lint.per-file-ignores]

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import StrEnum
-from typing import Optional, AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from pydantic import BaseModel
 
@@ -29,14 +29,14 @@ class ToolCall(BaseModel):
 class LLMMessage(BaseModel):
     content: str = ""
     role: Roles = Roles.ASSISTANT
-    tool_calls: Optional[list[ToolCall]] = None
-    tool_call_id: Optional[str] = None
-    name: Optional[str] = None
+    tool_calls: list[ToolCall] | None = None
+    tool_call_id: str | None = None
+    name: str | None = None
 
 
 class LLM(ABC):
     def __init__(self) -> None:
-        self.tools: Optional[list[Tool]] = []
+        self.tools: list[Tool] | None = []
 
     @abstractmethod
     async def generate(self, conversation: list[LLMMessage]) -> LLMMessage:

@@ -3,13 +3,13 @@ from typing import TypeVar, Generic
 
 from conversational_toolkit.chunking.base import Chunk
 
-T = TypeVar("T", bound=Chunk)  # Ensures T is a subclass of Chunk
+T_co = TypeVar("T_co", bound=Chunk, covariant=True)
 
 
-class Retriever(ABC, Generic[T]):
+class Retriever(ABC, Generic[T_co]):
     def __init__(self, top_k: int):
         self.top_k = top_k
 
     @abstractmethod
-    async def retrieve(self, query: str) -> list[T]:
+    async def retrieve(self, query: str) -> list[T_co]:
         pass
