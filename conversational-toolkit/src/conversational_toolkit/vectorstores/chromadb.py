@@ -1,0 +1,103 @@
+import chromadb
+from typing import Union, Any, Optional
+import numpy as np
+from numpy.typing import NDArray
+
+from conversational_toolkit.chunking.base import Chunk
+from conversational_toolkit.utils.database import generate_uid
+from conversational_toolkit.vectorstores.base import VectorStore, ChunkMatch
+
+
+class ChromaDBVectorStore(VectorStore):
+    def __init__(self, db_path: str, collection_name: str = "default_collection"):
+        """
+        Initialize the ChromaDB vector store.
+
+        :param db_path: Path to store the ChromaDB database.
+        :param collection_name: Name of the collection within the database.
+        """
+        self.client = chromadb.PersistentClient(path=db_path)
+        self.collection = self.client.get_or_create_collection(name=collection_name)
+
+    async def insert_chunks(self, chunks: list[Chunk], embeddings: NDArray[np.float64]) -> None:
+        """
+        Insert chunks into ChromaDB.
+
+        :param chunks: List of document chunks
+        :param embeddings: Corresponding embedding vectors
+        """
+        documents = []
+        metadatas = []
+        ids = []
+
+        for chunk, embedding in zip(chunks, embeddings):
+            doc_id = str(generate_uid())
+            documents.append(chunk.content)
+            metadatas.append({"title": chunk.title, "mime_type": chunk.mime_type, **chunk.metadata})
+            ids.append(doc_id)
+
+        self.collection.add(
+            ids=ids,
+            embeddings=embeddings.tolist(),  # type: ignore
+            metadatas=metadatas,  # type: ignore
+            documents=documents,
+        )
+
+    async def get_chunks_by_embedding(
+        self, embedding: NDArray[np.float64], top_k: int, filters: Optional[dict[str, Any]] = None
+    ) -> list[ChunkMatch]:
+        """
+        Retrieve chunks most similar to the given embedding.
+
+        :param embedding: Query embedding
+        :param top_k: Number of results to return
+        :param filters: Optional filters for metadata
+        """
+        results = self.collection.query(query_embeddings=embedding.tolist(), n_results=top_k, where=filters)  # type: ignore
+
+        chunk_matches = []
+        if results and results["ids"]:
+            for i in range(len(results["ids"][0])):
+                metadata = results["metadatas"][0][i] if results["metadatas"] else {}
+                chunk_matches.append(
+                    ChunkMatch(
+                        id=results["ids"][0][i],
+                        title=str(metadata.get("title", "")),
+                        mime_type=str(metadata.get("mime_type", "")),
+                        metadata=metadata,  # type: ignore
+                        content=results["documents"][0][i] if results["documents"] else "",
+                        embedding=[],
+                        score=results["distances"][0][i] if results["distances"] else 0.0,
+                    )
+                )
+
+        return chunk_matches
+
+    async def get_chunks_by_ids(self, chunk_ids: Union[int, list[int]]) -> list[Chunk]:
+        """
+        Retrieve chunks by their IDs.
+
+        :param chunk_ids: A single ID or a list of IDs
+        :return: List of retrieved chunks
+        """
+        if isinstance(chunk_ids, int):
+            chunk_ids = [str(chunk_ids)]  # type: ignore
+        else:
+            chunk_ids = [str(cid) for cid in chunk_ids]  # type: ignore
+
+        results = self.collection.get(ids=chunk_ids)  # type: ignore
+
+        chunks = []
+        if results and results["ids"]:
+            for i in range(len(results["ids"])):
+                metadata = results["metadatas"][i] if results["metadatas"] else {}
+                chunks.append(
+                    Chunk(
+                        title=str(metadata.get("title", "")),
+                        mime_type=str(metadata.get("mime_type", "")),
+                        content=results["documents"][i] if results["documents"] else "",
+                        metadata=metadata,  # type: ignore
+                    )
+                )
+
+        return chunks

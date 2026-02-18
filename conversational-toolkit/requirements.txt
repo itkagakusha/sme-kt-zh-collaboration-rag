@@ -1,0 +1,13 @@
+-e .
+fastapi==0.115.11
+httpx==0.28.1
+loguru==0.6.0
+numpy==2.2.3
+ollama==0.4.7
+openai==1.68.2
+pgvector==0.3.6
+pydantic==2.10.6
+python-jose==3.4.0
+ruff==0.9.9
+sentence_transformers==3.4.1
+SQLAlchemy==2.0.38
