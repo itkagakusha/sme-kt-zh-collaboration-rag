@@ -90,6 +90,5 @@ Features 2–5 (Evaluation, Structured Outputs, Query Intelligence, Agent Workfl
 |---------|---------------------|---------------|
 | `ollama` (default) | — | `mistral-nemo:12b` |
 | `openai` | `OPENAI_API_KEY` | `gpt-4o-mini` |
-| `qwen` | `SDSC_QWEN3_32B_AWQ` | `Qwen3-32B-AWQ` |
 
 Set `BACKEND=<name>` and optionally `MODEL=<model-name>` as environment variables before running any feature module.

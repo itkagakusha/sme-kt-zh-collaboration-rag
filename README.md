@@ -258,7 +258,6 @@ Supplier-provided specs, datasheets, and article documents. Naming: `SPEC_{categ
 |---------|---------|-------|
 | Ollama | `BACKEND=ollama python -m sme_kt_zh_collaboration_rag.feature0_baseline_rag` | Requires `ollama serve` and `ollama pull mistral-nemo:12b` |
 | OpenAI | `BACKEND=openai python -m ...` | Requires `OPENAI_API_KEY` env var or `/secrets/OPENAI_API_KEY` file |
-| SDSC Qwen | `BACKEND=qwen python -m ...` | Requires `SDSC_QWEN3_32B_AWQ` env variable |
 
 Override the model: `MODEL=gpt-4o BACKEND=openai python -m ...`
 

@@ -15,7 +15,6 @@ Steps at a glance:
 LLM backends (BACKEND must be set explicitly — there is no default):
     ollama  — local Ollama server at http://localhost:11434
     openai  — requires OPENAI_API_KEY (env var or /secrets/OPENAI_API_KEY file)
-    qwen    — requires SDSC_QWEN3_32B_AWQ (env var or /secrets/SDSC_QWEN3_32B_AWQ file)
 
 Data & vector store:
     PDFs are read from <project-root>/data/.
@@ -27,7 +26,6 @@ Usage:
     BACKEND must always be provided explicitly:
         BACKEND=ollama python -m sme_kt_zh_collaboration_rag.feature0_baseline_rag
         BACKEND=openai python -m sme_kt_zh_collaboration_rag.feature0_baseline_rag
-        BACKEND=qwen   python -m sme_kt_zh_collaboration_rag.feature0_baseline_rag
 
     Override the query or model at runtime:
         QUERY="What is the carbon footprint of wood pallets?" \\
@@ -72,9 +70,17 @@ SEED = 42
 MAX_FILES = 5
 
 SYSTEM_PROMPT = (
-    "You are a helpful AI assistant specialised in sustainability and product compliance. "
-    "Answer questions using the provided sources. "
-    "If the information is not in the sources, say so clearly."
+    "You are a helpful AI assistant specialised in sustainability and product compliance "
+    "for PrimePack AG.\n\n"
+    "You will receive document excerpts relevant to the user's question. "
+    "Produce the best possible answer using only the information in those excerpts.\n\n"
+    "Rules:\n"
+    "- Use the provided excerpts as your only source of truth. Do not rely on outside knowledge.\n"
+    "- Use all relevant excerpts when forming your answer.\n"
+    "- If the answer cannot be found in the excerpts, clearly say that you do not know.\n"
+    "- Always cite the source document for any claim you make.\n"
+    "- If excerpts contain conflicting information, report both values and flag the conflict.\n"
+    "- Distinguish between third-party verified claims (EPDs) and self-declared supplier claims."
 )
 
 _CHUNKERS: dict[str, PDFChunker | ExcelChunker | MarkdownChunker] = {
@@ -122,7 +128,6 @@ def build_llm(
         temperature: Sampling temperature.
 
     For 'openai', the key is loaded from /secrets/OPENAI_API_KEY or the OPENAI_API_KEY env var.
-    For 'qwen', the key is loaded from /secrets/SDSC_QWEN3_32B_AWQ or the SDSC_QWEN3_32B_AWQ env var.
     """
     backend = backend.lower().strip()
     match backend:
@@ -200,6 +205,9 @@ def load_chunks(max_files: int | None = None) -> list[Chunk]:
             file_chunks = chunker.make_chunks(str(file_path))
             for chunk in file_chunks:
                 chunk.metadata["source_file"] = file_path.name
+                # Also store as "source" and "title" so the frontend can display them
+                chunk.metadata["source"] = file_path.name
+                chunk.metadata["title"] = chunk.title
             all_chunks.extend(file_chunks)
             logger.debug(f"  {file_path.name}: {len(file_chunks)} chunks")
         except Exception as exc:

@@ -19,3 +19,4 @@ rank-bm25==0.2.2
 ruff==0.12.3
 sentence-transformers==5.1.1
 SQLAlchemy==2.0.46
+uvicorn==0.35.0
