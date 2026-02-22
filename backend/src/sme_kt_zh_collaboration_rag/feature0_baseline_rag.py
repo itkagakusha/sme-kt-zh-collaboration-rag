@@ -285,7 +285,7 @@ async def inspect_retrieval(
     in isolation to tune 'RETRIEVER_TOP_K', experiment with query phrasing, or compare
     different embedding models.
 
-    # TODO To add lexical (BM25) or hybrid (semantic + lexical) retrieval, replace
+    # To add lexical (BM25) or hybrid (semantic + lexical) retrieval, replace
     'VectorStoreRetriever' with 'HybridRetriever([semantic, bm25], top_k=top_k)'.
     'BM25Retriever' requires a 'list[ChunkRecord]' corpus -> pass the records
     retrieved from ChromaDB or, after a full store insert, re-fetch them with
@@ -405,7 +405,7 @@ async def run_pipeline(
     # Step 5: Generate answer
     answer = await ask(agent, query)
 
-    logger.info("======= Baseline RAG pipeline — done =======")
+    logger.info("Baseline RAG pipeline done")
     return answer
 
 
