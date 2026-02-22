@@ -39,25 +39,50 @@ pip install -e backend/
 
 ### Ollama (local LLM)
 
+[Ollama](https://ollama.com) lets you run open-weight language models locally — no API key, no data sent externally. Use it as a privacy-preserving alternative to the OpenAI backend.
+
+**Install Ollama**
+
+| Platform | Command |
+|---|---|
+| macOS | `brew install ollama` or download the app from [ollama.com](https://ollama.com/download) |
+| Linux | `curl -fsSL https://ollama.com/install.sh \| sh` |
+| Windows | Download the installer from [ollama.com](https://ollama.com/download) |
+
+**Start the server and download a model**
+
 ```bash
-# Start the Ollama server
+# Start the Ollama server (runs in the background on port 11434)
 ollama serve
 
-# Download a model, e.g. mistral-nemo:12b
+# Pull the default workshop model (~7 GB)
 ollama pull mistral-nemo:12b
+
+# List models already downloaded
+ollama list
 ```
+
+The server must be running whenever you use `BACKEND=ollama`. On macOS the desktop app starts the server automatically; on Linux run `ollama serve` in a separate terminal.
+
+**Recommended models**
+
+| Model | Size | Notes |
+|---|---|---|
+| `mistral-nemo:12b` | ~7 GB | Default for this workshop. Good quality on CPU. |
+| `llama3.2:3b` | ~2 GB | Faster on CPU, weaker reasoning |
+| `qwen2.5:7b` | ~5 GB | Strong multilingual support (German, French) |
 
 ### Renku environment
 
 ```bash
-# Start Ollama pointing to the mounted model directory
-OLLAMA_MODELS=$RENKU_MOUNT_DIR/ollama_models ollama serve
+# Start Ollama pointing to the shared model directory (avoids re-downloading)
+OLLAMA_MODELS=$RENKU_MOUNT_DIR/ollama_models ollama serve &
+
+# Pull a model (only needed once — stored in the shared directory)
+ollama pull mistral-nemo:12b
 
 # List available models
 ollama list
-
-# Download a model
-ollama pull mistral-nemo:12b
 ```
 
 ---
@@ -233,7 +258,7 @@ Supplier-provided specs, datasheets, and article documents. Naming: `SPEC_{categ
 
 | File | Content |
 |------|---------|
-| `product_overview.xlsx` | Machine-readable product table: all 12 products with IDs, suppliers, categories, and EPD status. Referenced by `ART_product_catalog.md` for the full product list. |
+| `ART_product_overview.xlsx` | Machine-readable product table: all 12 products with IDs, suppliers, categories, and EPD status. Referenced by `ART_product_catalog.md` for the full product list. |
 
 ---
 
