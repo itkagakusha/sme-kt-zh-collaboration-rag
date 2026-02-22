@@ -277,6 +277,7 @@ async def inspect_retrieval(
     query: str,
     vector_store: ChromaDBVectorStore,
     embedding_model: SentenceTransformerEmbeddings,
+    top_k: int = RETRIEVER_TOP_K,
 ) -> list[ChunkMatch]:
     """Run semantic retrieval and print the results before the LLM sees anything.
 
@@ -287,18 +288,16 @@ async def inspect_retrieval(
 
     # TODO To add lexical (BM25) or hybrid (semantic + lexical) retrieval, replace
     'VectorStoreRetriever' with 'HybridRetriever([semantic, bm25], top_k=top_k)'.
-    'BM25Retriever' requires a 'list[ChunkRecord]' corpus — pass the records
+    'BM25Retriever' requires a 'list[ChunkRecord]' corpus -> pass the records
     retrieved from ChromaDB or, after a full store insert, re-fetch them with
     'vector_store.get_chunks_by_embedding(zero_vector, top_k=N)'.
     """
-    retriever = VectorStoreRetriever(
-        embedding_model, vector_store, top_k=RETRIEVER_TOP_K
-    )
+    retriever = VectorStoreRetriever(embedding_model, vector_store, top_k=top_k)
     results = await retriever.retrieve(query)
 
     logger.info(f"Retrieval for query: {query!r}")
     print(
-        f"\nTop-{RETRIEVER_TOP_K} retrieved chunks (returned={len(results)}; showing a maximum of 1000 content characters):"
+        f"\nTop-{top_k} retrieved chunks (returned={len(results)}; showing a maximum of 1000 content characters):"
     )
     for i, r in enumerate(results, 1):
         src = r.metadata.get("source_file", "?")
